@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+interface CartItem {
+  quantity: number;
+  price?: number;
+  name?: string;  
+  image?: string;
+}
+
 export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
 
   const updateCartCount = () => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const count = cart.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    const cart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]");
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
     setCartCount(count);
   };
 

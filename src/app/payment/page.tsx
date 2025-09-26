@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+interface CartItem {
+  price: number;
+  quantity: number;
+  name?: string;
+  image?: string;
+}
+
 export default function PaymentPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const t = cart.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
+    const t = cart.reduce((sum: number, i: CartItem) => sum + i.price * i.quantity, 0);
     setTotal(t);
   }, []);
 

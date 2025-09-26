@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(error);
+    console.error("An error occurred");
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 });
   }
 }
