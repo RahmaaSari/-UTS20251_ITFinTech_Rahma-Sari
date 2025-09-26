@@ -8,10 +8,17 @@ interface ProductCardProps {
   image: string;
 }
 
+interface CartItem {
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
+
 export default function ProductCard({ name, price, image }: ProductCardProps) {
   const addToCart = () => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existing = cart.find((item: any) => item.name === name);
+    const cart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existing = cart.find((item) => item.name === name);
 
     if (existing) {
       existing.quantity += 1;
