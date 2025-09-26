@@ -31,8 +31,8 @@ export async function GET() {
     await Product.insertMany(products);
 
     return NextResponse.json({ message: "Seeding berhasil!", products });
-  } catch (error) {
-    console.error(error);
+  } catch (_error) {
+    console.error("An error occurred");
     return NextResponse.json({ error: "Seeding gagal" }, { status: 500 });
   }
 }

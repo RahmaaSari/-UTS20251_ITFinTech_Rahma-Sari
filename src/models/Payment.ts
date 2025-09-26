@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const PaymentSchema = new Schema({
   external_id: { type: String, required: true, unique: true },
