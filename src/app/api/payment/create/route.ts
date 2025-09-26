@@ -1,37 +1,36 @@
+// src/app/api/payment/create/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
+import { connectDB } from "@/lib/mongodb";
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
-    const { amount } = await req.json();
-    const external_id = "order-" + Date.now();
+    const { external_id, payer_email, amount, items } = await req.json();
 
-    // Simpan di MongoDB
+    await connectDB();
+
     await Payment.create({ external_id, amount, status: "PENDING" });
 
-    // Buat invoice Xendit
-    const response = await fetch("https://api.xendit.co/v2/invoices", {
+    const res = await fetch("https://api.xendit.co/v2/invoices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization:
-          "Basic " + Buffer.from(`${process.env.XENDIT_API_KEY}:`).toString("base64"),
+        Authorization: "Basic " + btoa(process.env.XENDIT_API_KEY + ":"),
       },
       body: JSON.stringify({
         external_id,
+        payer_email,
         amount,
-        payer_email: "test@email.com",
-        description: "Test payment",
-        should_send_email: false,
+        description: "Pembayaran EduShop",
+        items,
+        success_redirect_url: "https://uts-20251-it-fin-tech-rahma-sari-ny2wb35lh.vercel.app/payment-success",
       }),
     });
 
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch {
-    console.error("An error occurred");
-    return NextResponse.json({ error: "Failed to create payment" }, { status: 500 });
+    const data = await res.json();
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

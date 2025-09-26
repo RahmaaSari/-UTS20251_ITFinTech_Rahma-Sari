@@ -22,7 +22,6 @@ export default function CheckoutPage() {
   const saveCart = (updated: CartItem[]) => {
     setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
-    // 🔹 Trigger update ke Navbar
     window.dispatchEvent(new Event("cartChange"));
   };
 
@@ -40,6 +39,38 @@ export default function CheckoutPage() {
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  // 🔹 Function untuk lanjut ke payment
+  const handlePayment = async () => {
+    if (cart.length === 0) return alert("Keranjang kosong!");
+
+    try {
+      const external_id = "order_" + Date.now();
+
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          external_id,
+          payer_email: "test@example.com",
+          amount: total,
+          items: cart, // 🔹 Kirim semua item cart
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.data && data.data.invoice_url) {
+        window.location.href = data.data.invoice_url;
+      } else {
+        alert("Gagal membuat payment. Cek console.");
+        console.log(data);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan saat membuat payment.");
+    }
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Checkout</h1>
@@ -56,39 +87,25 @@ export default function CheckoutPage() {
                 <div>
                   <h2 className="font-bold">{item.name}</h2>
                   <p>Rp{item.price.toLocaleString()}</p>
+                  <p>Qty: {item.quantity}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <button
-                  onClick={() => updateQuantity(i, -1)}
-                  className="px-2 py-1 bg-gray-200 rounded"
-                >
-                  -
-                </button>
-                <span>{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(i, 1)}
-                  className="px-2 py-1 bg-gray-200 rounded"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => removeItem(i)}
-                  className="ml-4 text-red-500 font-bold"
-                >
-                  Hapus
-                </button>
+                <button onClick={() => updateQuantity(i, -1)} className="px-2 py-1 bg-gray-200 rounded">-</button>
+                <button onClick={() => updateQuantity(i, 1)} className="px-2 py-1 bg-gray-200 rounded">+</button>
+                <button onClick={() => removeItem(i)} className="ml-4 text-red-500 font-bold">Hapus</button>
               </div>
             </div>
           ))}
 
           <div className="text-right mt-6">
             <h2 className="text-xl font-bold">Total: Rp{total.toLocaleString()}</h2>
-            <Link href="/payment">
-              <button className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                Lanjut ke Pembayaran
-              </button>
-            </Link>
+            <button
+              onClick={handlePayment}
+              className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Lanjut ke Pembayaran
+            </button>
           </div>
         </div>
       )}
