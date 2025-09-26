@@ -8,43 +8,31 @@ export async function GET() {
 
     const products = [
       {
-        name: "Green Tea",
-        description: "Minuman teh hijau segar",
-        price: 2.5,
-        category: "Drinks",
-        image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300",
+        name: "Buku Edukatif",
+        description: "Buku belajar interaktif untuk anak usia dini.",
+        price: 50000,
+        image: "/images/Buku.jpg",
       },
       {
-        name: "Potato Chips",
-        description: "Cemilan kentang renyah",
-        price: 1.8,
-        category: "Snacks",
-        image: "https://images.unsplash.com/photo-1585238342028-4bc961bba0e1?w=300",
+        name: "Mainan Puzzle",
+        description: "Puzzle kayu untuk melatih motorik halus anak.",
+        price: 75000,
+        image: "/images/Puzzle.png",
       },
       {
-        name: "Chocolate Bar",
-        description: "Coklat manis lezat",
-        price: 3.2,
-        category: "Snacks",
-        image: "https://images.unsplash.com/photo-1606312619070-b4f4c9b3b1f0?w=300",
-      },
-      {
-        name: "Mineral Water",
-        description: "Air mineral murni",
-        price: 1.0,
-        category: "Drinks",
-        image: "https://images.unsplash.com/photo-1564228512246-65bf09e6c2a8?w=300",
+        name: "Flashcard ABC",
+        description: "Mainan untuk belajar warna.",
+        price: 40000,
+        image: "/images/Mainan.jpg",
       },
     ];
 
-    // Hapus data lama
     await Product.deleteMany({});
-    // Tambah data baru
     await Product.insertMany(products);
 
-    return NextResponse.json({ message: "✅ Data produk berhasil di-seed" });
+    return NextResponse.json({ message: "Seeding berhasil!", products });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "❌ Gagal seeding data" }, { status: 500 });
+    return NextResponse.json({ error: "Seeding gagal" }, { status: 500 });
   }
 }

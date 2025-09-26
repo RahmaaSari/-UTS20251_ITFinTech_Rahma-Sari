@@ -1,19 +1,31 @@
-// src/components/Navbar.tsx
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
-  return (
-    <nav className="bg-white shadow-sm py-3">
-      <div className="max-w-4xl mx-auto px-4 flex justify-between items-center">
-        {/* Logo */}
-        <div className="font-bold text-lg">Logo</div>
+  const [cartCount, setCartCount] = useState(0);
 
-        {/* Icon Cart */}
-        <div className="flex items-center space-x-4">
-          <Link href="/checkout" className="flex items-center space-x-2">
-            <span className="text-xl">🛒</span>
-          </Link>
-        </div>
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const count = cart.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    setCartCount(count);
+  };
+
+  useEffect(() => {
+    updateCartCount();
+    window.addEventListener("cartChange", updateCartCount);
+    return () => {
+      window.removeEventListener("cartChange", updateCartCount);
+    };
+  }, []);
+
+  return (
+    <nav className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+      <Link href="/" className="text-xl font-bold">EduShop</Link>
+      <div className="flex gap-6">
+        <Link href="/">Home</Link>
+        <Link href="/checkout">Checkout ({cartCount})</Link>
       </div>
     </nav>
   );
