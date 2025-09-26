@@ -2,25 +2,26 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     console.log("📩 Webhook received:", body);
 
     await connectDB();
 
-    // Ambil data dari webhook Xendit
     const { external_id, status } = body;
 
-    // Update status pembayaran
-    await Payment.findOneAndUpdate(
-      { _id: external_id }, // external_id = id checkout/payment kamu
-      { status: status === "PAID" ? "LUNAS" : status }
-    );
+    if (status === "PAID") {
+      await Payment.findOneAndUpdate(
+        { external_id },
+        { status: "LUNAS", paid_at: new Date() }
+      );
+      console.log(`✅ Payment ${external_id} updated to LUNAS`);
+    }
 
     return NextResponse.json({ message: "Webhook processed" });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

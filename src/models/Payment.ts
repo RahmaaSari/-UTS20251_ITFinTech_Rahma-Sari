@@ -1,14 +1,11 @@
-import mongoose, { Schema, models } from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose";
 
-const paymentSchema = new Schema(
-  {
-    checkoutId: { type: Schema.Types.ObjectId, ref: "Checkout" },
-    paymentMethod: String,
-    amount: Number,
-    status: { type: String, default: "PENDING" }, // PENDING / PAID / FAILED
-  },
-  { timestamps: true }
-);
+const PaymentSchema = new Schema({
+  external_id: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true },
+  status: { type: String, default: "PENDING" },
+  paid_at: Date,
+});
 
-const Payment = models.Payment || mongoose.model("Payment", paymentSchema);
+const Payment = models.Payment || model("Payment", PaymentSchema);
 export default Payment;
