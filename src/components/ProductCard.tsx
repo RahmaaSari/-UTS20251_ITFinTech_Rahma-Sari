@@ -28,7 +28,6 @@ export default function ProductCard({ name, price, image }: ProductCardProps) {
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    // 🔹 Trigger event supaya Navbar update
     window.dispatchEvent(new Event("cartChange"));
 
     alert(`${name} ditambahkan ke keranjang!`);

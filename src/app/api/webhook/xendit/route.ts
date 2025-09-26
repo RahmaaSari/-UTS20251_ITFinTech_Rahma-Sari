@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ message: "Webhook processed" });
-  } catch (_error) {
+  } catch {
     console.error("An error occurred");
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

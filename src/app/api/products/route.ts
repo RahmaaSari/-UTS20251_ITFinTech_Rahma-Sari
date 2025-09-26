@@ -8,7 +8,7 @@ export async function GET() {
     await connectDB();
     const products = await Product.find({});
     return NextResponse.json(products);
-  } catch (_error) {
+  } catch {
     return NextResponse.json({ message: "Error fetching products" }, { status: 500 });
   }
 }
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     await connectDB();
     const newProduct = await Product.create(data);
     return NextResponse.json(newProduct);
-  } catch (_error) {
+  } catch {
     console.error("An error occurred");
     return NextResponse.json({ message: "Error adding product" }, { status: 500 });
   }
