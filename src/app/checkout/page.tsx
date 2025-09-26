@@ -92,6 +92,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex items-center gap-4">
                 <button onClick={() => updateQuantity(i, -1)} className="px-2 py-1 bg-gray-200 rounded">-</button>
+                <h5>{item.quantity}</h5>
                 <button onClick={() => updateQuantity(i, 1)} className="px-2 py-1 bg-gray-200 rounded">+</button>
                 <button onClick={() => removeItem(i)} className="ml-4 text-red-500 font-bold">Hapus</button>
               </div>
