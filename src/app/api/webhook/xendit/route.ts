@@ -3,13 +3,19 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 
+// Tipe minimal webhook Xendit
+interface XenditWebhookBody {
+  external_id: string;
+  status: string;
+  paid_at?: string;
+}
+
 export async function POST(req: Request) {
   try {
     const headers = req.headers;
     const tokenHeader = headers.get("x-callback-token");
     const secretToken = process.env.XENDIT_WEBHOOK_TOKEN;
 
-    // ✅ Verifikasi token webhook dari Xendit
     if (!secretToken) {
       console.error("❌ XENDIT_WEBHOOK_TOKEN belum di-set di env");
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
@@ -20,11 +26,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ambil body webhook
-    const body = await req.json();
+    // Ambil body webhook dengan tipe
+    const body: XenditWebhookBody = await req.json();
     console.log("📩 Webhook received:", body);
 
-    // ✅ Respon cepat ke Xendit agar tidak timeout
+    // Respon cepat ke Xendit
     processPayment(body);
 
     return NextResponse.json({ message: "Webhook received" });
@@ -34,8 +40,8 @@ export async function POST(req: Request) {
   }
 }
 
-// Fungsi untuk update payment di background
-async function processPayment(body: any) {
+// Fungsi update payment di background dengan tipe XenditWebhookBody
+async function processPayment(body: XenditWebhookBody) {
   try {
     await connectDB();
     const { external_id, status, paid_at } = body;
