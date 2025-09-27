@@ -12,15 +12,16 @@ export default function PaymentPage() {
   const [total, setTotal] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const serviceFee = 1000; // ✅ biaya layanan tetap
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("cart") || "[]");
     setCart(stored);
-    const t = stored.reduce(
+    const subtotal = stored.reduce(
       (sum: number, i: CartItem) => sum + i.price * i.quantity,
       0
     );
-    setTotal(t);
+    setTotal(subtotal + serviceFee); // ✅ total sudah termasuk biaya layanan
   }, []);
 
   const handlePayment = async () => {
@@ -39,13 +40,20 @@ export default function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           external_id,
-          email, // ✅ gunakan field yg sesuai backend
+          email,
           amount: total,
-          items: cart.map((item) => ({
-            name: item.name || "Produk EduShop",
-            quantity: item.quantity,
-            price: item.price,
-          })),
+          items: [
+            ...cart.map((item) => ({
+              name: item.name || "Produk EduShop",
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            {
+              name: "Biaya Layanan Aplikasi", // ✅ tambahan
+              quantity: 1,
+              price: serviceFee,
+            },
+          ],
         }),
       });
 
@@ -53,7 +61,6 @@ export default function PaymentPage() {
       console.log("📦 Response dari API:", data);
 
       if (data.invoice_url) {
-        // ✅ langsung gunakan invoice_url
         window.location.href = data.invoice_url;
       } else {
         alert(`Gagal membuat payment: ${data.error || "Unknown error"}`);
@@ -70,6 +77,29 @@ export default function PaymentPage() {
     <div className="max-w-lg mx-auto p-8 border rounded-lg shadow-md mt-10">
       <h1 className="text-2xl font-bold mb-6 text-center">Pembayaran</h1>
 
+      {/* ✅ Daftar Invoice */}
+      <div className="mb-6">
+        {cart.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex justify-between items-center border-b py-2"
+          >
+            <span>
+              {item.name} x {item.quantity}
+            </span>
+            <span>
+              Rp{(item.price * item.quantity).toLocaleString()}
+            </span>
+          </div>
+        ))}
+        {/* Tambahkan biaya layanan */}
+        <div className="flex justify-between items-center border-t pt-2 font-medium text-sm text-gray-700">
+          <span>Biaya Layanan Aplikasi</span>
+          <span>Rp{serviceFee.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* ✅ Total */}
       <div className="bg-gray-50 p-4 rounded-md mb-6">
         <p className="text-lg">
           Total yang harus dibayar:{" "}
