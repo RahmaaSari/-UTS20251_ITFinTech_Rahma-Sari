@@ -27,9 +27,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Ambil API key dari environment
+    // ✅ Ambil API Key dari environment
     const XENDIT_API_KEY = process.env.XENDIT_API_KEY;
-
     if (!XENDIT_API_KEY) {
       console.error("❌ XENDIT_API_KEY tidak ditemukan di environment");
       return NextResponse.json(
@@ -49,7 +48,7 @@ export async function POST(req: Request) {
       status: "PENDING",
     });
 
-    // ✅ Encode Basic Auth
+    // ✅ Encode Basic Auth (gunakan Buffer, bukan btoa)
     const authHeader =
       "Basic " + Buffer.from(`${XENDIT_API_KEY}:`).toString("base64");
 
@@ -75,15 +74,12 @@ export async function POST(req: Request) {
 
     const data = await res.json();
 
-    // ✅ Log untuk debugging di Vercel
     console.log("🧾 Xendit Response:", data);
 
-    // ✅ Jika sukses
     if (data.invoice_url) {
       return NextResponse.json({ invoice_url: data.invoice_url, data });
     }
 
-    // ✅ Jika gagal dari Xendit
     return NextResponse.json(
       { error: data.message || "Gagal membuat invoice", data },
       { status: 400 }
