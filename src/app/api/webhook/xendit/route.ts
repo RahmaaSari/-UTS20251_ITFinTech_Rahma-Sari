@@ -10,20 +10,39 @@ export async function POST(req: Request) {
     const secretToken = process.env.XENDIT_WEBHOOK_TOKEN;
 
     // ✅ Verifikasi token webhook dari Xendit
+    if (!secretToken) {
+      console.error("❌ XENDIT_WEBHOOK_TOKEN belum di-set di env");
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    }
+
     if (tokenHeader !== secretToken) {
-      console.error("❌ Invalid Xendit callback token");
+      console.error("❌ Invalid Xendit callback token:", tokenHeader);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Ambil body webhook
     const body = await req.json();
     console.log("📩 Webhook received:", body);
 
-    await connectDB();
+    // ✅ Respon cepat ke Xendit agar tidak timeout
+    processPayment(body);
 
+    return NextResponse.json({ message: "Webhook received" });
+  } catch (error) {
+    console.error("❌ Webhook error", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// Fungsi untuk update payment di background
+async function processPayment(body: any) {
+  try {
+    await connectDB();
     const { external_id, status, paid_at } = body;
 
     if (!external_id) {
-      return NextResponse.json({ error: "Missing external_id" }, { status: 400 });
+      console.warn("⚠️ Webhook missing external_id");
+      return;
     }
 
     if (status === "PAID") {
@@ -41,10 +60,7 @@ export async function POST(req: Request) {
     } else {
       console.log(`Webhook received with status: ${status}`);
     }
-
-    return NextResponse.json({ message: "Webhook processed" });
-  } catch (error) {
-    console.error("Webhook error", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (err) {
+    console.error("❌ DB processing error:", err);
   }
 }
