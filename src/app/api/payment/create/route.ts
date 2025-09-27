@@ -27,6 +27,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Ambil API key dari environment
+    const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY;
+
+    if (!XENDIT_SECRET_KEY) {
+      console.error("❌ XENDIT_SECRET_KEY tidak ditemukan di environment");
+      return NextResponse.json(
+        { error: "Konfigurasi server tidak lengkap (API key tidak ditemukan)" },
+        { status: 500 }
+      );
+    }
+
     // ✅ Koneksi ke MongoDB
     await connectDB();
 
@@ -38,13 +49,16 @@ export async function POST(req: Request) {
       status: "PENDING",
     });
 
+    // ✅ Encode Basic Auth
+    const authHeader =
+      "Basic " + Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64");
+
     // ✅ Panggil API Xendit
     const res = await fetch("https://api.xendit.co/v2/invoices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization:
-          "Basic " + btoa(`${process.env.XENDIT_API_KEY ?? ""}:`),
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         external_id,
@@ -59,19 +73,19 @@ export async function POST(req: Request) {
       }),
     });
 
-    const data: Record<string, unknown> = await res.json();
+    const data = await res.json();
 
     // ✅ Log untuk debugging di Vercel
     console.log("🧾 Xendit Response:", data);
 
-    // ✅ Jika sukses dari Xendit
-    if ("invoice_url" in data && typeof data.invoice_url === "string") {
+    // ✅ Jika sukses
+    if (data.invoice_url) {
       return NextResponse.json({ invoice_url: data.invoice_url, data });
     }
 
-    // ✅ Jika gagal (Xendit error message)
+    // ✅ Jika gagal dari Xendit
     return NextResponse.json(
-      { error: (data.message as string) || "Gagal membuat invoice" },
+      { error: data.message || "Gagal membuat invoice", data },
       { status: 400 }
     );
   } catch (error) {
