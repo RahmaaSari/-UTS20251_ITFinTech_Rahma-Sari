@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         description: "Pembayaran EduShop",
         items,
         success_redirect_url:
-          "https://uts-20251-it-fin-tech-rahma-sari.vercel.app/payment-success?external_id=${external_id}",
+          `https://uts-20251-it-fin-tech-rahma-sari.vercel.app/payment-success?external_id=${external_id}`,
       }),
     });
 
