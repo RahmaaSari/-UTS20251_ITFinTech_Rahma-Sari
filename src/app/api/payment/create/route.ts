@@ -28,10 +28,10 @@ export async function POST(req: Request) {
     }
 
     // ✅ Ambil API key dari environment
-    const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY;
+    const XENDIT_API_KEY = process.env.XENDIT_API_KEY;
 
-    if (!XENDIT_SECRET_KEY) {
-      console.error("❌ XENDIT_SECRET_KEY tidak ditemukan di environment");
+    if (!XENDIT_API_KEY) {
+      console.error("❌ XENDIT_API_KEY tidak ditemukan di environment");
       return NextResponse.json(
         { error: "Konfigurasi server tidak lengkap (API key tidak ditemukan)" },
         { status: 500 }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     // ✅ Encode Basic Auth
     const authHeader =
-      "Basic " + Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64");
+      "Basic " + Buffer.from(`${XENDIT_API_KEY}:`).toString("base64");
 
     // ✅ Panggil API Xendit
     const res = await fetch("https://api.xendit.co/v2/invoices", {
