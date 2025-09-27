@@ -1,47 +1,3 @@
-// import { NextResponse } from "next/server";
-// import Payment from "@/models/Payment";
-// import { connectDB } from "@/lib/mongodb";
-
-// export async function POST(req: Request) {
-//   try {
-//     const { external_id, payer_email, amount, items } = await req.json();
-//     await connectDB();
-
-//     // Simpan awal di DB
-//     const payment = await Payment.create({ external_id, amount, status: "PENDING" });
-
-//     // Panggil Xendit (Basic Auth with API key as username)
-//     const xenditRes = await fetch("https://api.xendit.co/v2/invoices", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: "Basic " + Buffer.from(`${process.env.XENDIT_API_KEY}:`).toString("base64"),
-//       },
-//       body: JSON.stringify({
-//         external_id,
-//         payer_email,
-//         amount,
-//         description: "Pembayaran EduShop",
-//         items,
-//         success_redirect_url: `https://uts-20251-it-fin-tech-rahma-sari.vercel.app/payment-success?external_id=${external_id}`,
-//         failure_redirect_url: `https://uts-20251-it-fin-tech-rahma-sari.vercel.app/payment-failure?external_id=${external_id}`,
-//       }),
-//     });
-
-//     const data = await xenditRes.json();
-
-//     return NextResponse.json({
-//       message: "Payment created",
-//       invoice_url: data.invoice_url ?? null,
-//       xendit_response: data,
-//       db_payment_id: payment._id,
-//     });
-//   } catch (error: unknown) {
-//     console.error("Payment creation error:", error);
-//     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-//   }
-// }
-
 import { NextResponse } from "next/server";
 import Payment from "@/models/Payment";
 import { connectDB } from "@/lib/mongodb";
@@ -74,7 +30,7 @@ export async function POST(req: Request) {
         amount,
         description: "Pembayaran EduShop",
         items,
-        success_redirect_url: "http://localhost:3000/payment-success", // bisa ubah ke domain deploy nanti
+        success_redirect_url: "http://uts-20251-it-fin-tech-rahma-sari.vercel.app/payment-success", // bisa ubah ke domain deploy nanti
       }),
     });
 
