@@ -27,8 +27,10 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Koneksi ke MongoDB
     await connectDB();
 
+    // ✅ Simpan transaksi ke database
     await Payment.create({
       external_id,
       amount,
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
       status: "PENDING",
     });
 
+    // ✅ Panggil API Xendit
     const res = await fetch("https://api.xendit.co/v2/invoices", {
       method: "POST",
       headers: {

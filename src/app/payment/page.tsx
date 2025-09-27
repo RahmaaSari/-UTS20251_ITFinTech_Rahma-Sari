@@ -26,10 +26,8 @@ export default function PaymentPage() {
   const handlePayment = async () => {
     if (cart.length === 0) return alert("Keranjang kosong!");
 
-    const payer_email = prompt(
-      "Masukkan email untuk menerima invoice pembayaran:"
-    );
-    if (!payer_email) return alert("Email wajib diisi!");
+    const email = prompt("Masukkan email untuk menerima invoice pembayaran:");
+    if (!email) return alert("Email wajib diisi!");
 
     setLoading(true);
 
@@ -41,19 +39,24 @@ export default function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           external_id,
+          email, // ✅ gunakan field yg sesuai backend
           amount: total,
-          payer_email,
-          items: cart,
+          items: cart.map((item) => ({
+            name: item.name || "Produk EduShop",
+            quantity: item.quantity,
+            price: item.price,
+          })),
         }),
       });
 
       const data = await res.json();
-      console.log("📦 Response Xendit:", data);
+      console.log("📦 Response dari API:", data);
 
-      if (data.data && data.data.invoice_url) {
-        window.location.href = data.data.invoice_url;
+      if (data.invoice_url) {
+        // ✅ langsung gunakan invoice_url
+        window.location.href = data.invoice_url;
       } else {
-        alert("Gagal membuat payment. Cek console.");
+        alert(`Gagal membuat payment: ${data.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error(error);
