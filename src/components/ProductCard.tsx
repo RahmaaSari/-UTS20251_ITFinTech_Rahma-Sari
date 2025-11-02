@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 
 interface ProductCardProps {
@@ -17,6 +16,15 @@ interface CartItem {
 
 export default function ProductCard({ name, price, image }: ProductCardProps) {
   const addToCart = () => {
+    const token = localStorage.getItem("token");
+
+    // 🚫 Jika belum login, arahkan ke halaman login
+    if (!token) {
+      alert("Silakan login terlebih dahulu untuk menambah ke keranjang.");
+      window.location.href = "/login";
+      return;
+    }
+
     const cart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((item) => item.name === name);
 
@@ -27,7 +35,6 @@ export default function ProductCard({ name, price, image }: ProductCardProps) {
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
-
     window.dispatchEvent(new Event("cartChange"));
 
     alert(`${name} ditambahkan ke keranjang!`);

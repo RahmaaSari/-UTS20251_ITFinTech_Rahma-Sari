@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import ProductCard from "@/components/ProductCard";
+import { redirect } from "next/navigation";
 
 export interface ProductType {
   _id: string;
@@ -10,6 +11,10 @@ export interface ProductType {
 }
 
 export default async function HomePage() {
+  const userData = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  if (userData && JSON.parse(userData).role === "admin") {
+    redirect("/admin");
+  }
   await connectDB();
 
   const products = (await Product.find().lean()) as unknown as ProductType[];

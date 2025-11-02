@@ -41,11 +41,11 @@ export default function CheckoutPage() {
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  // 🔹 Hanya redirect ke halaman payment
   const goToPayment = () => {
     if (cart.length === 0) return alert("Keranjang kosong!");
     router.push("/payment");
   };
+
 
   return (
     <div className="p-8">
