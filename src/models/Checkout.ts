@@ -1,36 +1,45 @@
-// models/Checkout.ts
-import mongoose, { Schema, models } from "mongoose";
+import mongoose, { Schema, Document, models, Model } from "mongoose";
 
-const productItemSchema = new Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  name: String,
-  quantity: { type: Number, required: true },
+export interface IProductItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface ICheckout extends Document {
+  userId: string;
+  products: IProductItem[];
+  total: number;
+  status: "draft" | "waiting payment" | "lunas";
+  external_id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+const ProductItemSchema = new Schema<IProductItem>({
+  productId: { type: String, required: true },
+  name: { type: String, required: true },
   price: { type: Number, required: true },
+  quantity: { type: Number, required: true },
 });
 
-const checkoutSchema = new Schema(
+const CheckoutSchema = new Schema<ICheckout>(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    products: [productItemSchema],
-    total: { type: Number, default: 0 },
-    status: { type: String, default: "draft" }, // draft, completed
+    userId: { type: String, required: true },
+    products: { type: [ProductItemSchema], default: [] },
+    total: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ["draft", "waiting payment", "lunas"],
+      default: "draft",
+    },
+    external_id: { type: String },
   },
   { timestamps: true }
 );
 
-const Checkout = models.Checkout || mongoose.model("Checkout", checkoutSchema);
+const Checkout: Model<ICheckout> =
+  models.Checkout || mongoose.model<ICheckout>("Checkout", CheckoutSchema);
+
 export default Checkout;
-
-
-// import mongoose, { Schema, models } from "mongoose";
-
-// const checkoutSchema = new Schema(
-//   {
-//     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-//     quantity: Number,
-//   },
-//   { timestamps: true }
-// );
-
-// const Checkout = models.Checkout || mongoose.model("Checkout", checkoutSchema);
-// export default Checkout;

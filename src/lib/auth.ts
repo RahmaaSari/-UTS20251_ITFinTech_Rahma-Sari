@@ -1,48 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 
-export const authenticate = async (req: NextRequest) => {
+export interface AuthPayload {
+  id: string;
+  email?: string;
+  role?: string;
+  status?: number;
+}
+
+export const authenticate = async (
+  req: Request | NextRequest
+): Promise<AuthPayload | null> => {
   try {
     const authHeader = req.headers.get("authorization");
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return null;
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as AuthPayload | null;
 
     if (!decoded) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return null;
     }
 
-    // token valid → return data user dari JWT
     return decoded;
   } catch (err) {
     console.error("Auth middleware error:", err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return null;
   }
 };
-
-// import { NextRequest } from "next/server";
-// import { verifyToken } from "@/lib/jwt";
-
-// export const authenticate = async (req: NextRequest): Promise<{ id: string; email: string } | null> => {
-//   try {
-//     const authHeader = req.headers.get("authorization");
-//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-//       return null; 
-//     }
-
-//     const token = authHeader.split(" ")[1];
-//     const decoded = verifyToken(token) as { id: string; email: string };
-
-//     if (!decoded) {
-//       return null;
-//     }
-
-//     return decoded;
-//   } catch (err) {
-//     console.error("Auth middleware error:", err);
-//     return null; 
-//   }
-// };

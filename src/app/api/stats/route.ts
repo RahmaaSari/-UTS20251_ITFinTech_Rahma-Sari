@@ -3,30 +3,46 @@ import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import Checkout from "@/models/Checkout";
 
+interface ProductItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface CheckoutDoc {
+  products: ProductItem[];
+  status: string;
+}
+
+interface AggregatedSale {
+  _id: string;
+  total: number;
+}
+
 export async function GET() {
   await connectDB();
 
-  // === 1️⃣ Total transaksi lunas ===
   const totalLunas = await Checkout.countDocuments({ status: { $in: ["paid", "lunas"] } });
 
-  // === 2️⃣ Total omzet (hanya dari Payment dengan status PAID/LUNAS) ===
   const omzetAgg = await Payment.aggregate([
     { $match: { status: { $in: ["PAID", "LUNAS", "paid", "lunas"] } } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
   const totalOmzet = omzetAgg[0]?.total || 0;
 
-  // === 3️⃣ Total produk terjual ===
-  const allCheckouts = await Checkout.find({ status: { $in: ["paid", "lunas"] } });
-  const totalProdukTerjual = allCheckouts.reduce((sum, co) => {
+  const allCheckouts: CheckoutDoc[] = await Checkout.find({ status: { $in: ["paid", "lunas"] } });
+  const totalProdukTerjual = allCheckouts.reduce((sum: number, co: CheckoutDoc) => {
     return (
       sum +
-      co.products.reduce((subtotal: number, p: any) => subtotal + (p.quantity || 1), 0)
+      co.products.reduce(
+        (subtotal: number, p: ProductItem) => subtotal + (p.quantity || 1),
+        0
+      )
     );
   }, 0);
 
-  // === 4️⃣ Grafik omzet harian ===
-  const dailySales = await Payment.aggregate([
+  // Harian
+  const dailySales: AggregatedSale[] = await Payment.aggregate([
     {
       $match: {
         status: { $in: ["PAID", "LUNAS", "paid", "lunas"] },
@@ -42,9 +58,8 @@ export async function GET() {
     { $sort: { _id: 1 } },
   ]);
 
-  // === 5️⃣ Grafik omzet mingguan ===
-  // Group berdasarkan tahun dan minggu ke-n (ISO week)
-  const weeklySales = await Payment.aggregate([
+  // Mingguan
+  const weeklySales: AggregatedSale[] = await Payment.aggregate([
     {
       $match: {
         status: { $in: ["PAID", "LUNAS", "paid", "lunas"] },
@@ -62,15 +77,23 @@ export async function GET() {
     },
     {
       $project: {
-        _id: { $concat: ["Minggu ke-", { $toString: "$_id.week" }, " (", { $toString: "$_id.year" }, ")"] },
+        _id: {
+          $concat: [
+            "Minggu ke-",
+            { $toString: "$_id.week" },
+            " (",
+            { $toString: "$_id.year" },
+            ")",
+          ],
+        },
         total: 1,
       },
     },
     { $sort: { "_id": 1 } },
   ]);
 
-  // === 6️⃣ Grafik omzet bulanan ===
-  const monthlySales = await Payment.aggregate([
+  // Bulanan
+  const monthlySales: AggregatedSale[] = await Payment.aggregate([
     {
       $match: {
         status: { $in: ["PAID", "LUNAS", "paid", "lunas"] },
@@ -120,20 +143,15 @@ export async function GET() {
     { $sort: { "_id": 1 } },
   ]);
 
-  // === 7️⃣ Ambil daftar order (untuk tabel bawah dashboard) ===
-  const recentOrders = await Checkout.find()
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
+  const recentOrders = await Checkout.find().sort({ createdAt: -1 }).limit(20).lean();
 
-  // === 8️⃣ Return data lengkap ===
   return NextResponse.json({
     totalLunas,
     totalOmzet,
     totalProdukTerjual,
-    daily: dailySales,
-    weekly: weeklySales,
-    monthly: monthlySales,
-    orders: recentOrders,
+    daily: dailySales || [],
+    weekly: weeklySales || [],
+    monthly: monthlySales || [],
+    orders: recentOrders || [],
   });
 }

@@ -5,25 +5,41 @@ import Checkout from "@/models/Checkout";
 import User from "@/models/User";
 import { authenticate } from "@/lib/auth";
 
+interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface AuthPayload {
+  id: string;
+  email?: string;
+  role?: string;
+  status?: number;
+}
+
 export async function POST(req: Request) {
   try {
-    const auth = await authenticate(req as any);
-    if (!auth || typeof auth === "string" || (auth as any)?.status === 401) {
+    const auth = (await authenticate(req)) as AuthPayload | null;
+    if (!auth || typeof auth === "string" || auth.status === 401) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (auth as any).id;
-    const { cart, total } = await req.json();
+    const userId = auth.id;
+    const { cart, total }: { cart: CartItem[]; total: number } = await req.json();
     await connectDB();
 
     const user = await User.findById(userId);
-    if (!user) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    }
 
     const serviceFee = 1000;
     const finalAmount = total + serviceFee;
     const external_id = `${userId}-${Date.now()}`;
 
-    // Simpan Checkout dengan status waiting payment
+    // Simpan Checkout
     const checkout = await Checkout.create({
       userId,
       products: cart,
@@ -32,7 +48,7 @@ export async function POST(req: Request) {
       external_id,
     });
 
-    // Buat invoice Xendit
+    // Buat invoice ke Xendit
     const xenditRes = await fetch("https://api.xendit.co/v2/invoices", {
       method: "POST",
       headers: {
@@ -50,14 +66,14 @@ export async function POST(req: Request) {
       }),
     });
 
-    const invoice = await xenditRes.json();
+    const invoice = await xenditRes.json() as { invoice_url?: string };
     if (!xenditRes.ok || !invoice?.invoice_url) {
       console.error("❌ Xendit error:", invoice);
       return NextResponse.json({ error: "Gagal membuat invoice Xendit" }, { status: 500 });
     }
 
     // Simpan Payment ke DB
-    const payment = await Payment.create({
+    await Payment.create({
       external_id,
       userId,
       checkoutId: checkout._id,
@@ -67,7 +83,7 @@ export async function POST(req: Request) {
       invoice_url: invoice.invoice_url,
     });
 
-    // Kirim notifikasi WA invoice
+    // Kirim WA notifikasi invoice
     if (user.phone) {
       await fetch("https://api.fonnte.com/send", {
         method: "POST",
@@ -79,7 +95,7 @@ export async function POST(req: Request) {
           target: user.phone,
           message: `🧾 Halo ${user.name || "Pelanggan"}, pesanan Anda berhasil dibuat!\nTotal: Rp${finalAmount.toLocaleString(
             "id-ID"
-          )}\nSilakan lakukan pembayaran di tautan berikut:\n${invoice.invoice_url}`,
+          )}\nSilakan bayar melalui tautan berikut:\n${invoice.invoice_url}`,
         }),
       });
     }
@@ -88,9 +104,8 @@ export async function POST(req: Request) {
       message: "Payment berhasil dibuat",
       invoice_url: invoice.invoice_url,
       external_id,
-      paymentId: payment._id,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("❌ Error di /api/payment/create:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
