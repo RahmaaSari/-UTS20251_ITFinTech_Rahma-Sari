@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const [chartView, setChartView] = useState<"daily" | "weekly" | "monthly">("daily");
 
   // auto-refresh setiap 10 detik
-  const { data: stats, error: statsError } = useSWR<StatsData>("/api/stats", fetcher, {
+  const { data: stats } = useSWR<StatsData>("/api/stats", fetcher, {
     refreshInterval: 10000,
   });
 
