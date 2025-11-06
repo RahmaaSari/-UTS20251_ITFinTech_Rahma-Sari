@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import useSWR from "swr";
 import {
@@ -19,6 +20,14 @@ interface Product {
   price: number;
   image: string;
   sold?: number;
+}
+
+interface Order {
+  _id: string;
+  userId: string;
+  totalAmount: number;
+  status: "paid" | "pending";
+  createdAt: string;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -182,7 +191,7 @@ export default function AdminDashboard() {
             {products.map((p: Product) => (
               <tr key={p._id}>
                 <td className="border p-2">
-                  <img
+                  <Image
                     src={p.image}
                     alt={p.name}
                     className="w-16 h-16 object-cover rounded"
@@ -276,7 +285,7 @@ export default function AdminDashboard() {
               />
 
               {formData.image && (
-                <img
+                <Image
                   src={formData.image}
                   alt="Preview"
                   className="w-32 h-32 object-cover rounded"
@@ -319,7 +328,7 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {stats.orders?.map((order: any) => (
+            {stats.orders?.map((order: Order) => (
               <tr key={order._id}>
                 <td className="border p-2">
                   {new Date(order.createdAt).toLocaleDateString("id-ID")}
