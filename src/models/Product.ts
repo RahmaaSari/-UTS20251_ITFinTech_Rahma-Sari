@@ -1,35 +1,74 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, models, Model } from "mongoose";
 
-export interface IProduct extends Document {
+export interface IPaymentItem {
   name: string;
-  description: string;
   price: number;
-  image: string;
-  sold: number;
+  quantity: number;
 }
 
-const ProductSchema = new Schema<IProduct>(
+export interface IPayment extends Document {
+  external_id: string;
+  userId: mongoose.Types.ObjectId;
+  items: IPaymentItem[];
+  amount: number;
+  status: "PENDING" | "PAID" | "LUNAS" | "FAILED" | "EXPIRED";
+  paid_at?: Date;
+  invoice_url?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+const PaymentItemSchema = new Schema<IPaymentItem>(
   {
-    name: { type: String, required: true },
-    description: String,
-    price: { type: Number, required: true },
-    image: { type: String, required: true },
-    sold: { type: Number, default: 0 },
+    name: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+);
+
+const PaymentSchema = new Schema<IPayment>(
+  {
+    external_id: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      trim: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    items: {
+      type: [PaymentItemSchema],
+      required: true,
+      default: [],
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: [0, "Jumlah pembayaran tidak boleh negatif"],
+    },
+    status: {
+      type: String,
+      enum: ["PENDING", "PAID", "LUNAS", "FAILED", "EXPIRED"],
+      default: "PENDING",
+    },
+    paid_at: {
+      type: Date,
+      default: null,
+    },
+    invoice_url: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
+const Payment: Model<IPayment> =
+  models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema);
 
-
-// import { Schema, model, models } from "mongoose";
-
-// const productSchema = new Schema({
-//   name: { type: String, required: true },
-//   description: String,
-//   price: { type: Number, required: true },
-//   image: String,
-// });
-
-// const Product = models.Product || model("Product", productSchema);
-// export default Product;
+export default Payment;

@@ -2,62 +2,68 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 
-interface ProductUpdateBody {
-  name?: string;
-  description?: string;
-  price?: number;
-  image?: string;
-}
-
-// GET /api/admin/products/[id]
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> } // 👈 perhatikan ini
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // 👈 ambil hasil promise
-  await connectDB();
-  const product = await Product.findById(id).lean();
+  try {
+    const { id } = await context.params;
+    await connectDB();
+    const product = await Product.findById(id);
 
-  if (!product) {
-    return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    if (!product) {
+      return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json(product);
 }
 
-// PUT /api/admin/products/[id]
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // 👈 disini juga
-  const body: ProductUpdateBody = await request.json();
-  await connectDB();
+  try {
+    const { id } = await context.params;
+    await connectDB();
 
-  const updated = await Product.findByIdAndUpdate(id, body, {
-    new: true,
-    runValidators: true,
-  }).lean();
+    const { name, description, price, image } = await request.json();
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { name, description, price, image },
+      { new: true, runValidators: true }
+    );
 
-  if (!updated) {
-    return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    if (!product) {
+      return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json(updated);
 }
 
-// DELETE /api/admin/products/[id]
 export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // 👈 sama juga
-  await connectDB();
+  try {
+    const { id } = await context.params;
+    await connectDB();
 
-  const deleted = await Product.findByIdAndDelete(id).lean();
-  if (!deleted) {
-    return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Produk berhasil dihapus" });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json({ message: "Produk berhasil dihapus" });
 }
